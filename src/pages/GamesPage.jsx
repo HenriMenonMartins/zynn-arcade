@@ -3,11 +3,15 @@ import Card from '../components/Card';
 import ClickerGame from '../games/ClickerGame';
 import ReactionGame from '../games/ReactionGame';
 import DodgeGame from '../games/DodgeGame';
+import MemoryFlipGame from '../games/MemoryFlipGame';
+import TargetRushGame from '../games/TargetRushGame';
 
 const GAMES = [
   { id: 'clicker', name: 'Coin Clicker', component: ClickerGame },
   { id: 'reaction', name: 'Reaction Speed', component: ReactionGame },
-  { id: 'dodge', name: 'Dodge Arena', component: DodgeGame }
+  { id: 'dodge', name: 'Dodge Arena', component: DodgeGame },
+  { id: 'memory', name: 'Memory Flip', component: MemoryFlipGame },
+  { id: 'target', name: 'Target Rush', component: TargetRushGame }
 ];
 
 export default function GamesPage() {

@@ -1,5 +1,14 @@
 import { createContext, useContext, useMemo, useState } from 'react';
-import { ACHIEVEMENT_RULES, AD_REWARD, DAILY_REWARD, GAME_FINISH_BONUS, LEVELS, SHOP_ITEMS } from '../data/gameData';
+import {
+  ACHIEVEMENT_RULES,
+  AD_REWARD,
+  AVATAR_ITEMS,
+  DAILY_REWARD,
+  GAME_FINISH_BONUS,
+  LEVELS,
+  MUSIC_ITEMS,
+  SHOP_ITEMS
+} from '../data/gameData';
 
 const STORAGE_KEY = 'zynn-arcade-state-v1';
 const todayKey = () => new Date().toISOString().slice(0, 10);
@@ -13,6 +22,10 @@ const initialState = {
   lastDailyClaimDate: null,
   selectedTheme: 'default',
   unlockedThemes: ['default'],
+  selectedAvatar: 'pilot',
+  unlockedAvatars: ['pilot'],
+  selectedMusic: 'mute',
+  unlockedMusic: ['mute'],
   achievements: [],
   stats: {
     gamesPlayed: 0,
@@ -30,6 +43,7 @@ function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return initialState;
+
     const parsed = JSON.parse(raw);
     return {
       ...initialState,
@@ -37,6 +51,8 @@ function loadState() {
       unlockedThemes: Array.isArray(parsed.unlockedThemes) ? parsed.unlockedThemes : initialState.unlockedThemes,
       achievements: Array.isArray(parsed.achievements) ? parsed.achievements : initialState.achievements,
       leaderboard: Array.isArray(parsed.leaderboard) ? parsed.leaderboard : initialState.leaderboard,
+      unlockedAvatars: Array.isArray(parsed.unlockedAvatars) ? parsed.unlockedAvatars : initialState.unlockedAvatars,
+      unlockedMusic: Array.isArray(parsed.unlockedMusic) ? parsed.unlockedMusic : initialState.unlockedMusic,
       stats: {
         ...initialState.stats,
         ...(parsed.stats || {})
@@ -88,6 +104,7 @@ export function ArcadeProvider({ children }) {
     patch((prev) => {
       const previousDate = prev.lastLoginDate;
       let streak = prev.streak || 0;
+
       if (previousDate) {
         const prevDate = new Date(previousDate);
         const now = new Date(today);
@@ -97,6 +114,7 @@ export function ArcadeProvider({ children }) {
       } else {
         streak = 1;
       }
+
       let next = { ...prev, username, streak, lastLoginDate: today };
       next = unlockAchievements(next);
       return next;
@@ -106,18 +124,41 @@ export function ArcadeProvider({ children }) {
   const claimDailyReward = () => {
     const today = todayKey();
     if (state.lastDailyClaimDate === today) return false;
-    patch((prev) => unlockAchievements({ ...prev, coins: prev.coins + DAILY_REWARD, xp: prev.xp + 40, lastDailyClaimDate: today }));
+
+    patch((prev) => unlockAchievements({
+      ...prev,
+      coins: prev.coins + DAILY_REWARD,
+      xp: prev.xp + 40,
+      lastDailyClaimDate: today
+    }));
     return true;
   };
 
-  const watchAd = () => patch((prev) => unlockAchievements({ ...prev, coins: prev.coins + AD_REWARD, xp: prev.xp + 20, stats: { ...prev.stats, adsWatched: prev.stats.adsWatched + 1 } }));
+  const watchAd = () => {
+    patch((prev) => unlockAchievements({
+      ...prev,
+      coins: prev.coins + AD_REWARD,
+      xp: prev.xp + 20,
+      stats: {
+        ...prev.stats,
+        adsWatched: prev.stats.adsWatched + 1
+      }
+    }));
+  };
 
   const finishGame = ({ coins = 0, xp = 0, game, score = 0 }) => {
     patch((prev) => {
       const updates = { ...prev.stats, gamesPlayed: prev.stats.gamesPlayed + 1 };
-      if (game === 'reaction' && (prev.stats.bestReactionMs === null || score < prev.stats.bestReactionMs)) updates.bestReactionMs = score;
-      if (game === 'dodge' && score > prev.stats.bestDodgeScore) updates.bestDodgeScore = score;
+
+      if (game === 'reaction' && (prev.stats.bestReactionMs === null || score < prev.stats.bestReactionMs)) {
+        updates.bestReactionMs = score;
+      }
+      if (game === 'dodge' && score > prev.stats.bestDodgeScore) {
+        updates.bestDodgeScore = score;
+      }
+
       const boardEntry = { game, score, when: Date.now(), user: prev.username };
+
       let next = {
         ...prev,
         coins: prev.coins + coins + GAME_FINISH_BONUS,
@@ -130,17 +171,75 @@ export function ArcadeProvider({ children }) {
     });
   };
 
-  const recordClicker = (coinsEarned = 1) => patch((prev) => unlockAchievements({ ...prev, coins: prev.coins + coinsEarned, xp: prev.xp + 3, stats: { ...prev.stats, clickerClicks: prev.stats.clickerClicks + 1 } }));
+  const recordClicker = (coinsEarned = 1) => {
+    patch((prev) => unlockAchievements({
+      ...prev,
+      coins: prev.coins + coinsEarned,
+      xp: prev.xp + 3,
+      stats: {
+        ...prev.stats,
+        clickerClicks: prev.stats.clickerClicks + 1
+      }
+    }));
+  };
 
   const buyTheme = (id) => {
     const item = SHOP_ITEMS.find((x) => x.id === id);
     if (!item) return false;
+
     if (state.unlockedThemes.includes(id)) {
-      patch({ ...state, selectedTheme: id });
+      patch((prev) => ({ ...prev, selectedTheme: id }));
       return true;
     }
+
     if (state.coins < item.price) return false;
-    patch((prev) => ({ ...prev, coins: prev.coins - item.price, unlockedThemes: [...prev.unlockedThemes, id], selectedTheme: id }));
+
+    patch((prev) => ({
+      ...prev,
+      coins: prev.coins - item.price,
+      unlockedThemes: [...prev.unlockedThemes, id],
+      selectedTheme: id
+    }));
+    return true;
+  };
+
+  const buyAvatar = (id) => {
+    const item = AVATAR_ITEMS.find((x) => x.id === id);
+    if (!item) return false;
+
+    if (state.unlockedAvatars.includes(id)) {
+      patch((prev) => ({ ...prev, selectedAvatar: id }));
+      return true;
+    }
+
+    if (state.coins < item.price) return false;
+
+    patch((prev) => ({
+      ...prev,
+      coins: prev.coins - item.price,
+      unlockedAvatars: [...prev.unlockedAvatars, id],
+      selectedAvatar: id
+    }));
+    return true;
+  };
+
+  const buyMusic = (id) => {
+    const item = MUSIC_ITEMS.find((x) => x.id === id);
+    if (!item) return false;
+
+    if (state.unlockedMusic.includes(id)) {
+      patch((prev) => ({ ...prev, selectedMusic: id }));
+      return true;
+    }
+
+    if (state.coins < item.price) return false;
+
+    patch((prev) => ({
+      ...prev,
+      coins: prev.coins - item.price,
+      unlockedMusic: [...prev.unlockedMusic, id],
+      selectedMusic: id
+    }));
     return true;
   };
 
@@ -152,7 +251,9 @@ export function ArcadeProvider({ children }) {
     watchAd,
     finishGame,
     recordClicker,
-    buyTheme
+    buyTheme,
+    buyAvatar,
+    buyMusic
   }), [state]);
 
   return <ArcadeContext.Provider value={value}>{children}</ArcadeContext.Provider>;

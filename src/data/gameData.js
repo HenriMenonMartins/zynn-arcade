@@ -5,6 +5,20 @@ export const SHOP_ITEMS = [
   { id: 'royal', name: 'Royal Core', price: 700, card: 'from-indigo-500 to-fuchsia-600' }
 ];
 
+export const AVATAR_ITEMS = [
+  { id: 'pilot', name: 'Neon Pilot', price: 0, icon: 'P', unlockedByDefault: true },
+  { id: 'ninja', name: 'Cyber Ninja', price: 240, icon: 'N' },
+  { id: 'robot', name: 'Steel Bot', price: 380, icon: 'R' },
+  { id: 'ghost', name: 'Void Ghost', price: 520, icon: 'G' }
+];
+
+export const MUSIC_ITEMS = [
+  { id: 'mute', name: 'Silent Mode', price: 0, unlockedByDefault: true, tones: [] },
+  { id: 'pulse', name: 'Arcade Pulse', price: 220, tones: [220, 330, 440, 330] },
+  { id: 'drift', name: 'Night Drift', price: 340, tones: [196, 247, 294, 247] },
+  { id: 'nova', name: 'Nova Rush', price: 480, tones: [262, 349, 523, 392] }
+];
+
 export const ACHIEVEMENT_RULES = [
   { id: 'play1', title: 'First Steps', description: 'Play 1 game', test: (s) => s.stats.gamesPlayed >= 1, reward: 50 },
   { id: 'play10', title: 'Arcade Fan', description: 'Play 10 games', test: (s) => s.stats.gamesPlayed >= 10, reward: 150 },
